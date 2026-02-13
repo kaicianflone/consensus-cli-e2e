@@ -1,0 +1,16 @@
+{
+  "name": "consensus-cli-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --import tsx tests/**/*.test.ts",
+    "deps:npm": "npm i --no-save @consensus-tools/consensus-tools@latest",
+    "deps:local": "npm i --no-save ../consensus-tools"
+  },
+  "dependencies": {
+    "@consensus-tools/consensus-tools": "^0.1.4"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3"
+  }
+}
