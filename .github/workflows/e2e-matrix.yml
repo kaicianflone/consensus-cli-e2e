@@ -1,0 +1,41 @@
+name: E2E Matrix
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tools_source: [npm_latest, local_workspace]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Use npm latest consensus-tools
+        if: matrix.tools_source == 'npm_latest'
+        run: npm run deps:npm
+
+      - name: Checkout consensus-tools (workspace-style)
+        if: matrix.tools_source == 'local_workspace'
+        uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-tools
+          path: consensus-tools
+
+      - name: Use local workspace consensus-tools
+        if: matrix.tools_source == 'local_workspace'
+        run: npm i --no-save ./consensus-tools
+
+      - run: npm test
