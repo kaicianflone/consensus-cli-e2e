@@ -1,0 +1,60 @@
+name: Ecosystem Dependency Gate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 14 * * *'
+  pull_request:
+
+jobs:
+  deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-agent-action-guard
+          path: ecosystem/consensus-agent-action-guard
+      - uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-code-merge-guard
+          path: ecosystem/consensus-code-merge-guard
+      - uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-deployment-guard
+          path: ecosystem/consensus-deployment-guard
+      - uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-permission-escalation-guard
+          path: ecosystem/consensus-permission-escalation-guard
+      - uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-publish-guard
+          path: ecosystem/consensus-publish-guard
+      - uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-send-email-guard
+          path: ecosystem/consensus-send-email-guard
+      - uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-support-reply-guard
+          path: ecosystem/consensus-support-reply-guard
+      - uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-persona-generator
+          path: ecosystem/consensus-persona-generator
+      - uses: actions/checkout@v4
+        with:
+          repository: kaicianflone/consensus-persona-respawn
+          path: ecosystem/consensus-persona-respawn
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/ci/check-ecosystem-deps.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ecosystem-deps-report
+          path: artifacts/reports/ecosystem-deps-report.md
