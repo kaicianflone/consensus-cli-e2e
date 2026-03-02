@@ -1,0 +1,64 @@
+name: Federation Nightly E2E
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  federation:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo:
+          - kaicianflone/consensus-tools
+          - kaicianflone/consensus-guard-core
+          - kaicianflone/consensus-agent-action-guard
+          - kaicianflone/consensus-code-merge-guard
+          - kaicianflone/consensus-deployment-guard
+          - kaicianflone/consensus-permission-escalation-guard
+          - kaicianflone/consensus-publish-guard
+          - kaicianflone/consensus-send-email-guard
+          - kaicianflone/consensus-support-reply-guard
+          - kaicianflone/consensus-persona-generator
+          - kaicianflone/consensus-persona-respawn
+          - kaicianflone/consensus-persona-engine
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          path: repo
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: repo/package-lock.json
+
+      - name: Install
+        run: |
+          cd repo
+          npm install --silent
+
+      - name: Test
+        run: |
+          cd repo
+          npm test
+
+      - name: Demo (if present)
+        run: |
+          cd repo
+          npm run demo --if-present
+
+  cli_e2e_canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run deps:npm
+      - run: npm test

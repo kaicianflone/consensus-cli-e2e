@@ -1,0 +1,94 @@
+name: Weekly Security Audit
+
+on:
+  schedule:
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    strategy:
+      fail-fast: false
+      matrix:
+        repo:
+          - kaicianflone/consensus-tools
+          - kaicianflone/consensus-guard-core
+          - kaicianflone/consensus-agent-action-guard
+          - kaicianflone/consensus-code-merge-guard
+          - kaicianflone/consensus-deployment-guard
+          - kaicianflone/consensus-permission-escalation-guard
+          - kaicianflone/consensus-publish-guard
+          - kaicianflone/consensus-send-email-guard
+          - kaicianflone/consensus-support-reply-guard
+          - kaicianflone/consensus-persona-generator
+          - kaicianflone/consensus-persona-respawn
+          - kaicianflone/consensus-persona-engine
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          path: repo
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: repo/package-lock.json
+
+      - name: Install
+        run: |
+          cd repo
+          npm install --silent
+
+      - name: npm audit (json)
+        run: |
+          cd repo
+          npm audit --json > audit.json || true
+
+      - name: Security policy check (if present)
+        run: |
+          cd repo
+          if [ -f scripts/ci/check-security-policy.mjs ]; then
+            node scripts/ci/check-security-policy.mjs
+          else
+            echo "security-policy script not present"
+          fi
+
+      - name: Summarize audit
+        run: |
+          cd repo
+          node -e "const fs=require('fs');const a=JSON.parse(fs.readFileSync('audit.json','utf8'));const m=a.metadata&&a.metadata.vulnerabilities?a.metadata.vulnerabilities:{};console.log('# '+process.env.GITHUB_REPOSITORY+' :: '+process.env.REPO_NAME);console.log(JSON.stringify(m,null,2));" \
+            | tee summary.txt
+        env:
+          REPO_NAME: ${{ matrix.repo }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-audit-${{ matrix.repo }}
+          path: |
+            repo/audit.json
+            repo/summary.txt
+
+  open_issue_on_failure:
+    needs: audit
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Weekly security audit failures detected';
+            const body = 'One or more repos failed weekly security audit lane. Check workflow run artifacts for details.';
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body
+            });
