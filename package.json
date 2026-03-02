@@ -8,7 +8,7 @@
     "deps:local": "npm i --no-save ../consensus-tools"
   },
   "dependencies": {
-    "@consensus-tools/consensus-tools": "^0.1.4"
+    "@consensus-tools/consensus-tools": "^0.2.0"
   },
   "devDependencies": {
     "tsx": "^4.20.3"
